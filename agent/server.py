@@ -57,6 +57,7 @@ from .tools import (
     web_search,
 )
 from .utils.auth import resolve_github_token
+from .utils.mcp import load_mcp_tools
 from .utils.model import make_model
 from .utils.sandbox import create_sandbox
 
@@ -400,6 +401,30 @@ async def get_agent(config: RunnableConfig) -> Pregel:  # noqa: PLR0915
     linear_project_id = linear_issue.get("linear_project_id", "")
     linear_issue_number = linear_issue.get("linear_issue_number", "")
     agents_md = await read_agents_md_in_sandbox(sandbox_backend, repo_dir)
+    mcp_tools = await load_mcp_tools()
+    agent_tools = [
+        http_request,
+        fetch_url,
+        web_search,
+        commit_and_open_pr,
+        linear_comment,
+        linear_create_issue,
+        linear_delete_issue,
+        linear_get_issue,
+        linear_get_issue_comments,
+        linear_list_teams,
+        linear_update_issue,
+        slack_thread_reply,
+        github_comment,
+        list_pr_reviews,
+        get_pr_review,
+        create_pr_review,
+        update_pr_review,
+        dismiss_pr_review,
+        submit_pr_review,
+        list_pr_review_comments,
+    ]
+    agent_tools.extend(mcp_tools)
 
     logger.info("Returning agent with sandbox for thread %s", thread_id)
     return create_deep_agent(
@@ -414,28 +439,7 @@ async def get_agent(config: RunnableConfig) -> Pregel:  # noqa: PLR0915
             linear_issue_number=linear_issue_number,
             agents_md=agents_md,
         ),
-        tools=[
-            http_request,
-            fetch_url,
-            web_search,
-            commit_and_open_pr,
-            linear_comment,
-            linear_create_issue,
-            linear_delete_issue,
-            linear_get_issue,
-            linear_get_issue_comments,
-            linear_list_teams,
-            linear_update_issue,
-            slack_thread_reply,
-            github_comment,
-            list_pr_reviews,
-            get_pr_review,
-            create_pr_review,
-            update_pr_review,
-            dismiss_pr_review,
-            submit_pr_review,
-            list_pr_review_comments,
-        ],
+        tools=agent_tools,
         backend=sandbox_backend,
         middleware=[
             ToolErrorMiddleware(),

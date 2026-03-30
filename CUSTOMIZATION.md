@@ -186,6 +186,34 @@ Open SWE ships with five custom tools on top of the built-in Deep Agents tools (
 | `linear_comment` | `agent/tools/linear_comment.py` | Post comments on Linear tickets |
 | `slack_thread_reply` | `agent/tools/slack_thread_reply.py` | Reply in Slack threads |
 
+### Loading Notion MCP Tools
+
+Open SWE can also append tools dynamically from a Notion MCP server in
+`agent/server.py` by creating a `MultiServerMCPClient` and awaiting
+`client.get_tools()`. This repo configures that integration through
+`NOTION_MCP_URL` and `NOTION_MCP_HEADERS_JSON`.
+
+For the self-hosted HTTP server, the MCP server itself requires a bearer token.
+That token is distinct from `NOTION_TOKEN`, which the server uses to call the
+Notion API. The Open SWE side should therefore send an `Authorization: Bearer`
+header via `NOTION_MCP_HEADERS_JSON`.
+
+To smoke-test MCP loading outside the agent loop, run:
+
+```bash
+NOTION_MCP_URL="http://localhost:3000/mcp" \
+NOTION_MCP_HEADERS_JSON='{"Authorization":"Bearer notion-mcp-secret"}' \
+uv run python scripts/test_mcp_tools.py
+```
+
+To invoke one discovered tool:
+
+```bash
+NOTION_MCP_URL="http://localhost:3000/mcp" \
+NOTION_MCP_HEADERS_JSON='{"Authorization":"Bearer notion-mcp-secret"}' \
+uv run python scripts/test_mcp_tools.py --tool search --args-json '{"query":"incident runbook"}'
+```
+
 ### Adding a tool
 
 Create a new file in `agent/tools/`, define a function, and add it to the tools list.

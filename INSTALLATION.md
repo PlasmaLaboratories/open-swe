@@ -451,7 +451,59 @@ Notes:
 - The container starts via `langgraph dev --no-reload` because this repo's runtime is defined by `langgraph.json`.
 - The built-in health check endpoint is `GET /health`.
 
-## Troubleshooting
+## 10. Notion
+
+If you want Open SWE to use Notion through MCP, run a separate Notion MCP
+server and point Open SWE at it over HTTP.
+
+### 10a. Self-hosting Railway
+
+Run the Notion MCP server as its own service. The simplest shape is a separate
+Railway service dedicated to `@notionhq/notion-mcp-server`.
+
+This repo now includes [Dockerfile.notion](/Users/petrus/Development/open-swe/Dockerfile.notion) for that service. On Railway, create a separate service using that Dockerfile, then set:
+- `NOTION_TOKEN`
+- `AUTH_TOKEN`
+
+Use your Notion integration token as `NOTION_TOKEN`, and set a separate bearer
+token that the Open SWE client will use to authenticate to the MCP server:
+
+```bash
+NOTION_TOKEN=ntn_**** \
+AUTH_TOKEN=notion-mcp-secret \
+npx @notionhq/notion-mcp-server --transport http --port 3000
+```
+
+Important:
+- `NOTION_TOKEN` is used by the MCP server to call the Notion API
+- `AUTH_TOKEN` protects the HTTP MCP server itself
+- these are different tokens and both are required for the HTTP setup
+
+For local development, `http://localhost:3000/mcp` is fine. For hosted Open SWE,
+replace that with the internal or public URL of the Railway-hosted Notion MCP
+service.
+
+### 10b. Envs
+
+```bash
+export NOTION_MCP_URL="http://localhost:3000/mcp"
+export NOTION_MCP_HEADERS_JSON='{"Authorization":"Bearer notion-mcp-secret"}'
+```
+
+Verify the integration before starting the full app:
+
+```bash
+uv run python scripts/test_mcp_tools.py
+```
+
+If discovery succeeds, the script will print the Notion MCP tools loaded from
+the server. You can also invoke one directly:
+
+```bash
+uv run python scripts/test_mcp_tools.py --tool search --args-json '{"query":"incident runbook"}'
+```
+
+## 11. Troubleshooting
 
 ### Webhook not receiving events
 
