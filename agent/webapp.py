@@ -1499,8 +1499,8 @@ async def github_webhook(request: Request, background_tasks: BackgroundTasks) ->
 
         issue_text = f"{issue.get('title', '')}\n\n{issue.get('body', '')}".lower()
         if not any(tag in issue_text for tag in OPEN_SWE_TAGS):
-            logger.info("Ignoring issue that does not mention @openswe or @open-swe")
-            return {"status": "ignored", "reason": "Issue does not mention @openswe or @open-swe"}
+            logger.info("Ignoring issue that does not mention a supported GitHub trigger")
+            return {"status": "ignored", "reason": "Issue does not mention a supported GitHub trigger"}
 
         logger.info("Accepted GitHub issue webhook, scheduling background task")
         background_tasks.add_task(process_github_issue, payload, event_type)
@@ -1509,8 +1509,8 @@ async def github_webhook(request: Request, background_tasks: BackgroundTasks) ->
     comment = payload.get("comment") or payload.get("review", {})
     comment_body = (comment.get("body") or "") if comment else ""
     if not any(tag in comment_body.lower() for tag in OPEN_SWE_TAGS):
-        logger.info("Ignoring comment that does not mention @openswe or @open-swe")
-        return {"status": "ignored", "reason": "Comment does not mention @openswe or @open-swe"}
+        logger.info("Ignoring comment that does not mention a supported GitHub trigger")
+        return {"status": "ignored", "reason": "Comment does not mention a supported GitHub trigger"}
 
     logger.info("Accepted GitHub webhook: event=%s, scheduling background task", event_type)
     if is_pull_request_comment or event_type in {
