@@ -25,24 +25,36 @@ def _json_env(var_name: str, *, default: Any) -> Any:
         raise ValueError(msg) from e
 
 
-def get_mcp_server_configs() -> dict[str, dict[str, Any]]:
-    """Build Notion MCP server config for langchain-mcp-adapters."""
-    notion_mcp_url = os.environ.get("NOTION_MCP_URL", "").strip()
-    if not notion_mcp_url:
-        return {}
+def _build_http_server_config(prefix: str) -> dict[str, Any] | None:
+    url = os.environ.get(f"{prefix}_URL", "").strip()
+    if not url:
+        return None
 
-    notion_headers = _json_env("NOTION_MCP_HEADERS_JSON", default={})
-    if not isinstance(notion_headers, dict):
-        msg = "NOTION_MCP_HEADERS_JSON must be a JSON object."
+    headers = _json_env(f"{prefix}_HEADERS_JSON", default={})
+    if not isinstance(headers, dict):
+        msg = f"{prefix}_HEADERS_JSON must be a JSON object."
         raise ValueError(msg)
 
     return {
-        "notion": {
-            "transport": os.environ.get("NOTION_MCP_TRANSPORT", "http").strip().lower() or "http",
-            "url": notion_mcp_url,
-            "headers": {str(key): str(value) for key, value in notion_headers.items()},
-        }
+        "transport": os.environ.get(f"{prefix}_TRANSPORT", "http").strip().lower() or "http",
+        "url": url,
+        "headers": {str(key): str(value) for key, value in headers.items()},
     }
+
+
+def get_mcp_server_configs() -> dict[str, dict[str, Any]]:
+    """Build MCP server config for langchain-mcp-adapters."""
+    server_configs: dict[str, dict[str, Any]] = {}
+
+    notion_config = _build_http_server_config("NOTION_MCP")
+    if notion_config:
+        server_configs["notion"] = notion_config
+
+    sentry_config = _build_http_server_config("SENTRY_MCP")
+    if sentry_config:
+        server_configs["sentry"] = sentry_config
+
+    return server_configs
 
 
 async def load_mcp_tools() -> list[Any]:

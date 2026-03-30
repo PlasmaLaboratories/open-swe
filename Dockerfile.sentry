@@ -1,0 +1,32 @@
+# Railway/runtime image for a standalone Sentry MCP HTTP service.
+FROM node:22-bookworm-slim
+
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV UPSTREAM_PORT=3001
+
+# Sentry auth token used by the MCP server to call Sentry APIs.
+ENV SENTRY_ACCESS_TOKEN=${SENTRY_ACCESS_TOKEN}
+# Optional hostname override for self-hosted Sentry, e.g. sentry.example.com
+ENV SENTRY_HOST=${SENTRY_HOST}
+# Optional skill disable list for self-hosted instances, e.g. seer
+ENV MCP_DISABLE_SKILLS=${MCP_DISABLE_SKILLS}
+# Optional AI provider config for Sentry's AI-powered search tools.
+ENV EMBEDDED_AGENT_PROVIDER=${EMBEDDED_AGENT_PROVIDER}
+ENV OPENAI_API_KEY=${OPENAI_API_KEY}
+ENV ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+# Bearer token required by clients calling this HTTP MCP server.
+ENV AUTH_TOKEN=${AUTH_TOKEN}
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY scripts/sentry_mcp_auth_proxy.mjs /app/scripts/sentry_mcp_auth_proxy.mjs
+COPY scripts/run_sentry_mcp_http.sh /app/scripts/run_sentry_mcp_http.sh
+
+EXPOSE 3000
+
+CMD ["sh", "/app/scripts/run_sentry_mcp_http.sh"]
