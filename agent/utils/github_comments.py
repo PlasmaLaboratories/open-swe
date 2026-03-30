@@ -15,7 +15,7 @@ from .github_user_email_map import GITHUB_USER_EMAIL_MAP
 
 logger = logging.getLogger(__name__)
 
-OPEN_SWE_TAGS = ("@openswe", "@open-swe", "@openswe-dev")
+OPEN_SWE_TAGS = ("@openswe", "@open-swe", "@openswe-dev", "@singularity")
 UNTRUSTED_GITHUB_COMMENT_OPEN_TAG = "<dangerous-external-untrusted-users-comment>"
 UNTRUSTED_GITHUB_COMMENT_CLOSE_TAG = "</dangerous-external-untrusted-users-comment>"
 _SANITIZED_UNTRUSTED_GITHUB_COMMENT_OPEN_TAG = "[blocked-untrusted-comment-tag-open]"
@@ -300,7 +300,7 @@ async def fetch_pr_comments_since_last_tag(
     # Sort all comments chronologically
     all_comments.sort(key=lambda c: c.get("created_at", ""))
 
-    # Find all @openswe / @open-swe mention positions
+    # Find all supported mention positions in GitHub comments.
     tag_indices = [
         i
         for i, comment in enumerate(all_comments)
@@ -310,7 +310,7 @@ async def fetch_pr_comments_since_last_tag(
     if not tag_indices:
         return []
 
-    # If this is the first @openswe invocation (only one tag), return ALL
+    # If this is the first invocation (only one tag), return ALL
     # comments so the agent has full context — inline review comments are
     # drafted before submission and appear earlier in the sorted list.
     # For repeat invocations, return everything since the previous tag.

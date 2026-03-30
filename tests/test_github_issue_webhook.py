@@ -61,7 +61,12 @@ def test_build_github_issue_prompt_includes_issue_context() -> None:
 def test_build_github_issue_followup_prompt_only_includes_comment() -> None:
     prompt = webapp.build_github_issue_followup_prompt("bracesproul", "Please handle this")
 
-    assert prompt == "**bracesproul:**\nPlease handle this"
+    assert prompt == (
+        "**bracesproul:**\n"
+        "<dangerous-external-untrusted-users-comment>\n"
+        "Please handle this\n"
+        "</dangerous-external-untrusted-users-comment>"
+    )
     assert "## Repository" not in prompt
     assert "## Title" not in prompt
 
@@ -148,6 +153,33 @@ def test_github_webhook_accepts_issue_comment_events(monkeypatch) -> None:
         {
             "issue": {"id": 12345, "number": 42, "title": "Fix the flaky test"},
             "comment": {"body": "@openswe please handle this"},
+            "repository": {"owner": {"login": "langchain-ai"}, "name": "open-swe"},
+            "sender": {"login": "octocat"},
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "accepted"
+    assert called["event_type"] == "issue_comment"
+
+
+def test_github_webhook_accepts_issue_comment_events_for_singularity(monkeypatch) -> None:
+    called: dict[str, object] = {}
+
+    async def fake_process_github_issue(payload: dict[str, object], event_type: str) -> None:
+        called["payload"] = payload
+        called["event_type"] = event_type
+
+    monkeypatch.setattr(webapp, "process_github_issue", fake_process_github_issue)
+    monkeypatch.setattr(webapp, "GITHUB_WEBHOOK_SECRET", _TEST_WEBHOOK_SECRET)
+
+    client = TestClient(webapp.app)
+    response = _post_github_webhook(
+        client,
+        "issue_comment",
+        {
+            "issue": {"id": 12345, "number": 42, "title": "Fix the flaky test"},
+            "comment": {"body": "@Singularity please handle this"},
             "repository": {"owner": {"login": "langchain-ai"}, "name": "open-swe"},
             "sender": {"login": "octocat"},
         },
