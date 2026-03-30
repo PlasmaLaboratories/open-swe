@@ -403,7 +403,9 @@ The server runs on `http://localhost:2024` with these endpoints:
 
 ## 9. Production deployment
 
-For production, deploy the agent on [LangGraph Cloud](https://langchain-ai.github.io/langgraph/cloud/) instead of running locally:
+You can deploy this repo either on [LangGraph Cloud](https://langchain-ai.github.io/langgraph/cloud/) or on Railway.
+
+### Option A: LangGraph Cloud
 
 1. Push your code to a GitHub repository
 2. Connect the repo to LangGraph Cloud
@@ -422,6 +424,32 @@ The `langgraph.json` at the project root already defines the graph entry point a
   }
 }
 ```
+
+### Option B: Railway
+
+This repo now includes Railway-ready config:
+
+- `.python-version` pins Python to `3.12`
+- `Dockerfile.api` defines the Railway runtime image
+- `railway.json` tells Railway to build from `Dockerfile.api` and uses `/health` for health checks
+
+To deploy on Railway:
+
+1. Create a new Railway project from this repository
+2. Leave Docker enabled so Railway uses the repository's Docker-based deploy path
+3. Add all environment variables from step 6 in the Railway service settings
+4. Deploy the service
+5. After Railway assigns a public domain, update your webhook URLs:
+   - GitHub App webhook: `https://<your-railway-domain>/webhooks/github`
+   - Linear webhook: `https://<your-railway-domain>/webhooks/linear`
+   - Slack events URL: `https://<your-railway-domain>/webhooks/slack`
+
+Notes:
+
+- Railway builds from `Dockerfile.api`, not the root `Dockerfile`. The root `Dockerfile` is still useful as a sandbox image reference elsewhere in this repo.
+- The Railway image uses Python `3.12`. Python `3.14` is not supported by this dependency set.
+- The container starts via `langgraph dev --no-reload` because this repo's runtime is defined by `langgraph.json`.
+- The built-in health check endpoint is `GET /health`.
 
 ## Troubleshooting
 

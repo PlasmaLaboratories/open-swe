@@ -1,0 +1,31 @@
+# Railway runtime image for the webhook/API service.
+# Keep this separate from the root Dockerfile: that image is documented and used
+# as a sandbox/tooling image, while this one is intentionally minimal and
+# optimized to boot LangGraph on Railway with Python 3.12 and PORT binding.
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.local/bin:${PATH}"
+
+COPY pyproject.toml uv.lock langgraph.json ./
+COPY agent ./agent
+COPY static ./static
+
+RUN uv sync --frozen
+
+EXPOSE 2024
+
+CMD ["sh", "-lc", "uv run --no-sync langgraph dev --host 0.0.0.0 --port ${PORT:-2024} --no-browser --no-reload"]
