@@ -323,6 +323,11 @@ GITHUB_WEBHOOK_SECRET=""               # The secret you generated in step 3b
 # With these, each user authenticates with their own GitHub account.
 GITHUB_OAUTH_PROVIDER_ID=""            # The provider ID from steps 3a / 4b
 
+# === Sentry MCP (optional) ===
+SENTRY_MCP_URL=""                      # e.g. "http://localhost:3000/mcp"
+SENTRY_MCP_HEADERS_JSON=""             # e.g. '{"Authorization":"Bearer sentry-mcp-secret"}'
+SENTRY_MCP_TRANSPORT="http"
+
 # === Org Allowlist (optional) ===
 # Comma-separated list of GitHub orgs the agent is allowed to operate on.
 # Leave empty to allow all orgs.
@@ -451,7 +456,87 @@ Notes:
 - The container starts via `langgraph dev --no-reload` because this repo's runtime is defined by `langgraph.json`.
 - The built-in health check endpoint is `GET /health`.
 
-## Troubleshooting
+## 10. Notion
+
+If you want Open SWE to use Notion through MCP, run a separate Notion MCP
+server and point Open SWE at it over HTTP.
+
+### 10a. Self-hosting Railway
+
+Run the Notion MCP server as its own service. The simplest shape is a separate
+Railway service dedicated to `@notionhq/notion-mcp-server`.
+
+This repo now includes [Dockerfile.notion](/Users/petrus/Development/open-swe/Dockerfile.notion) for that service. On Railway, create a separate service using that Dockerfile, then set:
+- `NOTION_TOKEN`
+- `AUTH_TOKEN`
+
+Use your Notion integration token as `NOTION_TOKEN`, and set a separate bearer
+token that the Open SWE client will use to authenticate to the MCP server:
+
+```bash
+NOTION_TOKEN=ntn_**** \
+AUTH_TOKEN=notion-mcp-secret \
+npx @notionhq/notion-mcp-server --transport http --port 3000
+```
+
+Important:
+- `NOTION_TOKEN` is used by the MCP server to call the Notion API
+- `AUTH_TOKEN` protects the HTTP MCP server itself
+- these are different tokens and both are required for the HTTP setup
+
+For local development, `http://localhost:3000/mcp` is fine. For hosted Open SWE,
+replace that with the internal or public URL of the Railway-hosted Notion MCP
+service.
+
+### 10b. Open-SWE Envs
+
+```bash
+export NOTION_MCP_URL="http://localhost:3000/mcp"
+export NOTION_MCP_HEADERS_JSON='{"Authorization":"Bearer notion-mcp-secret"}'
+```
+
+## 11. Sentry
+
+If you want Open SWE to use Sentry through MCP, run a separate Sentry MCP
+service and point Open SWE at it over HTTP.
+
+### 11a. Self-hosting Railway
+
+This repo includes [Dockerfile.sentry](/Users/petrus/Development/open-swe/Dockerfile.sentry)
+for a standalone Sentry MCP service. It runs the official Sentry stdio MCP
+server behind a small HTTP bearer-token proxy so Open SWE can consume it the
+same way it consumes the Notion MCP service.
+
+On Railway, create a separate service using that Dockerfile, then set:
+- `SENTRY_ACCESS_TOKEN`
+- `AUTH_TOKEN`
+
+Optional envs:
+- `SENTRY_HOST` for self-hosted Sentry
+- `MCP_DISABLE_SKILLS` if your Sentry instance does not support some features
+- `EMBEDDED_AGENT_PROVIDER`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` for AI-powered search tools
+
+Example:
+
+```bash
+SENTRY_ACCESS_TOKEN=sntrys_**** \
+AUTH_TOKEN=sentry-mcp-secret \
+sh /app/scripts/run_sentry_mcp_http.sh
+```
+
+Important:
+- `SENTRY_ACCESS_TOKEN` is used by the Sentry MCP server to call Sentry APIs
+- `AUTH_TOKEN` protects the HTTP MCP service itself
+- these are different tokens and both are recommended for the HTTP setup
+
+### 11b. Open-SWE Envs
+
+```bash
+export SENTRY_MCP_URL="http://localhost:3000/mcp"
+export SENTRY_MCP_HEADERS_JSON='{"Authorization":"Bearer sentry-mcp-secret"}'
+```
+
+## 12. Troubleshooting
 
 ### Webhook not receiving events
 

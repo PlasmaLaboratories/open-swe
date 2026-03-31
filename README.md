@@ -137,6 +137,8 @@ This is an area where you can extend Open SWE for your org: add deterministic CI
 - **Opens PRs automatically** — commits changes and opens a draft PR when done, linked back to your ticket
 - **Subagent support** — the agent can spawn child agents for parallel subtasks
 
+MCP auth note: for services like Sentry, this repo currently favors a sidecar MCP service protected with a shared bearer token, the same pattern used for Notion. That keeps the integration simple and compatible with Open SWE's current HTTP MCP loading path. For a full production deployment where MCP access should respect each end user's identity and permissions, the better long-term design is a per-user OAuth flow instead of shared sidecar auth.
+
 ---
 
 ## Getting Started

@@ -186,6 +186,62 @@ Open SWE ships with five custom tools on top of the built-in Deep Agents tools (
 | `linear_comment` | `agent/tools/linear_comment.py` | Post comments on Linear tickets |
 | `slack_thread_reply` | `agent/tools/slack_thread_reply.py` | Reply in Slack threads |
 
+### Loading Notion MCP Tools
+
+Open SWE can also append tools dynamically from a Notion MCP server in
+`agent/server.py` by creating a `MultiServerMCPClient` and awaiting
+`client.get_tools()`. This repo configures that integration through
+`NOTION_MCP_URL` and `NOTION_MCP_HEADERS_JSON`.
+
+For the self-hosted HTTP server, the MCP server itself requires a bearer token.
+That token is distinct from `NOTION_TOKEN`, which the server uses to call the
+Notion API. The Open SWE side should therefore send an `Authorization: Bearer`
+header via `NOTION_MCP_HEADERS_JSON`.
+
+To smoke-test MCP loading outside the agent loop, run:
+
+```bash
+NOTION_MCP_URL="http://localhost:3000/mcp" \
+NOTION_MCP_HEADERS_JSON='{"Authorization":"Bearer notion-mcp-secret"}' \
+uv run python scripts/test_mcp_tools.py
+```
+
+To invoke one discovered tool:
+
+```bash
+NOTION_MCP_URL="http://localhost:3000/mcp" \
+NOTION_MCP_HEADERS_JSON='{"Authorization":"Bearer notion-mcp-secret"}' \
+uv run python scripts/test_mcp_tools.py --tool search --args-json '{"query":"incident runbook"}'
+```
+
+### Loading Sentry MCP Tools
+
+Open SWE can also append tools dynamically from a Sentry MCP server in
+`agent/server.py` using the same `MultiServerMCPClient` path. This repo
+configures that integration through `SENTRY_MCP_URL` and
+`SENTRY_MCP_HEADERS_JSON`.
+
+This repo includes [Dockerfile.sentry](/Users/petrus/Development/open-swe/Dockerfile.sentry),
+which runs the official Sentry stdio MCP server behind a small HTTP bearer-token
+proxy. The Open SWE side should therefore send an `Authorization: Bearer`
+header via `SENTRY_MCP_HEADERS_JSON`.
+
+To smoke-test MCP loading outside the agent loop, run:
+
+```bash
+SENTRY_MCP_URL="http://localhost:3000/mcp" \
+SENTRY_MCP_HEADERS_JSON='{"Authorization":"Bearer sentry-mcp-secret"}' \
+uv run python scripts/test_mcp_tools.py
+```
+
+To invoke one discovered tool:
+
+```bash
+SENTRY_MCP_URL="http://localhost:3000/mcp" \
+SENTRY_MCP_HEADERS_JSON='{"Authorization":"Bearer sentry-mcp-secret"}' \
+uv run python scripts/test_mcp_tools.py --tool <tool-name-from-discovery> --args-json '{"query":"errors in checkout"}'
+```
+
 ### Adding a tool
 
 Create a new file in `agent/tools/`, define a function, and add it to the tools list.
