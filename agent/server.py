@@ -33,6 +33,7 @@ from .middleware import (
     ensure_no_empty_msg,
     open_pr_if_needed,
 )
+from .opencode_runtime import create_opencode_agent
 from .prompt import construct_system_prompt
 from .tools import (
     commit_and_open_pr,
@@ -249,11 +250,13 @@ def graph_loaded_for_execution(config: RunnableConfig) -> bool:
 
 DEFAULT_LLM_MODEL_ID = "anthropic:claude-opus-4-6"
 DEFAULT_RECURSION_LIMIT = 1_000
+DEFAULT_AGENT_RUNTIME = "deepagents"
 
 
 async def get_agent(config: RunnableConfig) -> Pregel:  # noqa: PLR0915
     """Get or create an agent with a sandbox for the given thread."""
     thread_id = config["configurable"].get("thread_id", None)
+    agent_runtime = os.environ.get("AGENT_RUNTIME", DEFAULT_AGENT_RUNTIME).strip().lower()
 
     config["recursion_limit"] = DEFAULT_RECURSION_LIMIT
 
@@ -263,6 +266,12 @@ async def get_agent(config: RunnableConfig) -> Pregel:  # noqa: PLR0915
 
     if thread_id is None or not graph_loaded_for_execution(config):
         logger.info("No thread_id or not for execution, returning agent without sandbox")
+        if agent_runtime == "opencode":
+            return create_opencode_agent(
+                system_prompt="",
+                sandbox_backend=None,
+                repo_dir=None,
+            ).with_config(config)
         return create_deep_agent(
             system_prompt="",
             tools=[],
@@ -427,6 +436,18 @@ async def get_agent(config: RunnableConfig) -> Pregel:  # noqa: PLR0915
     agent_tools.extend(mcp_tools)
 
     logger.info("Returning agent with sandbox for thread %s", thread_id)
+    if agent_runtime == "opencode":
+        return create_opencode_agent(
+            system_prompt=construct_system_prompt(
+                repo_dir,
+                linear_project_id=linear_project_id,
+                linear_issue_number=linear_issue_number,
+                agents_md=agents_md,
+            ),
+            sandbox_backend=sandbox_backend,
+            repo_dir=repo_dir,
+        ).with_config(config)
+
     return create_deep_agent(
         model=make_model(
             os.environ.get("LLM_MODEL_ID", DEFAULT_LLM_MODEL_ID),
