@@ -368,7 +368,7 @@ def test_get_slack_repo_config_repo_name_only_defaults_org(
 def test_get_slack_repo_config_repo_name_only_space_syntax(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """repo name (space syntax, no org) should default owner to langchain-ai."""
+    """repo name (space syntax, no org) should fall back to defaults."""
     threads_client = _FakeThreadsClient(raise_not_found=True)
 
     async def fake_post_slack_thread_reply(channel_id: str, thread_ts: str, text: str) -> bool:
@@ -379,4 +379,4 @@ def test_get_slack_repo_config_repo_name_only_space_syntax(
 
     repo = asyncio.run(webapp.get_slack_repo_config("fix bug in repo open-swe", "C123", "1.234"))
 
-    assert repo == {"owner": "langchain-ai", "name": "open-swe"}
+    assert repo == {"owner": "langchain-ai", "name": "langchainplus"}

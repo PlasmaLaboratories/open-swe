@@ -23,7 +23,7 @@ class TestExtractRepoFromText:
 
     def test_repo_space_name_only_uses_default_owner(self) -> None:
         result = extract_repo_from_text("fix bug in repo open-swe")
-        assert result == {"owner": "langchain-ai", "name": "open-swe"}
+        assert result is None
 
     def test_repo_name_only_custom_default_owner(self) -> None:
         result = extract_repo_from_text("repo:my-repo", default_owner="custom-org")
@@ -52,6 +52,10 @@ class TestExtractRepoFromText:
     def test_trailing_slash_stripped(self) -> None:
         result = extract_repo_from_text("repo:my-org/my-repo/")
         assert result == {"owner": "my-org", "name": "my-repo"}
+
+    def test_repo_space_requires_owner_and_name(self) -> None:
+        result = extract_repo_from_text("@openswe please use repo or PlasmaLaboratories/plasma-pay-hub")
+        assert result is None
 
 
 class TestLinearWebhookRepoOverride:
