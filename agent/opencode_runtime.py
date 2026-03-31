@@ -37,6 +37,7 @@ OPENCODE_RUNTIME_DIR = "/tmp/open-swe-opencode"
 OPENCODE_REQUEST_PATH = f"{OPENCODE_RUNTIME_DIR}/request.json"
 OPENCODE_SERVER_LOG_PATH = f"{OPENCODE_RUNTIME_DIR}/server.log"
 OPENCODE_SERVER_PID_PATH = f"{OPENCODE_RUNTIME_DIR}/server.pid"
+OPENCODE_INSTALL_DIR = "$HOME/.opencode/bin"
 
 _PROVIDER_API_KEY_ENV = {
     "anthropic": "ANTHROPIC_API_KEY",
@@ -268,9 +269,10 @@ async def _ensure_runtime_dir(sandbox_backend: Any) -> None:
 
 async def _ensure_opencode_installed(sandbox_backend: Any) -> None:
     install_cmd = (
-        "export PATH=\"$HOME/.local/bin:$PATH\" && "
-        "(command -v opencode >/dev/null 2>&1 || curl -fsSL https://opencode.ai/install | bash) && "
-        "command -v opencode >/dev/null 2>&1"
+        f"export PATH=\"{OPENCODE_INSTALL_DIR}:$PATH\" && "
+        "(command -v opencode >/dev/null 2>&1 || "
+        "curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path) && "
+        "(command -v opencode >/dev/null 2>&1 || test -x \"$HOME/.opencode/bin/opencode\")"
     )
     result = await _run_in_sandbox(sandbox_backend, install_cmd, timeout=900)
     if result.exit_code != 0:
@@ -368,7 +370,7 @@ async def _ensure_opencode_server(sandbox_backend: Any, repo_dir: str) -> None:
     await _ensure_runtime_dir(sandbox_backend)
 
     start_cmd = (
-        "export PATH=\"$HOME/.local/bin:$PATH\" && "
+        f"export PATH=\"{OPENCODE_INSTALL_DIR}:$PATH\" && "
         f"cd {shlex.quote(repo_dir)} && "
         f"nohup opencode serve --hostname 127.0.0.1 --port {OPENCODE_SERVER_PORT} "
         f">{shlex.quote(OPENCODE_SERVER_LOG_PATH)} 2>&1 < /dev/null & "
