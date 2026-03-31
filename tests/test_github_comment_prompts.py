@@ -61,7 +61,7 @@ def test_build_github_issue_prompt_only_wraps_external_comments() -> None:
         "The test is failing intermittently.",
         [
             {
-                "author": "bracesproul",
+                "author": "petertonysmith94",
                 "body": "Internal guidance",
                 "created_at": "2026-03-09T00:00:00Z",
             },
@@ -74,7 +74,7 @@ def test_build_github_issue_prompt_only_wraps_external_comments() -> None:
         github_login="octocat",
     )
 
-    assert "**bracesproul:**\nInternal guidance" in prompt
+    assert "**petertonysmith94:**\nInternal guidance" in prompt
     assert "**external-user:**" in prompt
     assert github_comments.UNTRUSTED_GITHUB_COMMENT_OPEN_TAG in prompt
     assert github_comments.UNTRUSTED_GITHUB_COMMENT_CLOSE_TAG in prompt
