@@ -49,7 +49,7 @@ def commit_and_open_pr(
 
     The PR title MUST follow this exact format:
 
-        <type>: <short lowercase description> [closes <PROJECT_ID>-<ISSUE_NUMBER>]
+        <type>: <short lowercase description>
 
     The description MUST be entirely lowercase (no capital letters).
 
@@ -63,13 +63,14 @@ def commit_and_open_pr(
     Use the linear_project_id and linear_issue_number from your context.
 
     Examples:
-    - "fix: resolve null pointer in user auth [closes AA-123]"
-    - "feat: add dark mode toggle to settings [closes ENG-456]"
-    - "chore: upgrade dependencies to latest versions [closes OPS-789]"
+    - "fix: resolve null pointer in user auth"
+    - "feat: add dark mode toggle to settings"
+    - "chore: upgrade dependencies to latest versions"
 
     ## Body Format (REQUIRED)
 
     The PR body MUST follow this exact template:
+        - Closes [PROJECT_ID]-[ISSUE_NUMBER](https://linear.app/plasma-labs/issue/PROJECT_ID-ISSUE_NUMBER)
 
         ## Description
         <1-3 sentences explaining WHY this PR is needed and the approach taken.
@@ -88,11 +89,11 @@ def commit_and_open_pr(
 
     Example body:
 
+        Closes [AA-123](https://linear.app/plasma-labs/issue/AA-123)
+
         ## Description
         Fixes the null pointer exception when a user without a profile authenticates.
         The root cause was a missing null check in `getProfile`.
-
-        Resolves AA-123
 
         ## Test Plan
         - [ ] Verify login works for users without profiles
